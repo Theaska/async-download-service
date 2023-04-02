@@ -61,6 +61,7 @@ async def archive(request: web.Request):
         if process.returncode is None:
             log('Download was interrupted')
             process.kill()
+            await process.communicate()
 
 
 async def handle_index_page(request: web.Request):
