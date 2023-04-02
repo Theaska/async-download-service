@@ -33,36 +33,33 @@ async def archive(request: web.Request):
     if not os.path.exists(photo_path):
         raise web.HTTPNotFound(text='Архив не существует или был удален')
 
-    coroutine = asyncio.create_subprocess_exec(
+    process = await asyncio.create_subprocess_exec(
         *cmd,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
         cwd=photo_path
     )
-    process = await coroutine
+    response = web.StreamResponse()
+    response.headers['content-disposition'] = f'attachment; filename={ZIP_NAME}'
+    await response.prepare(request)
 
-    while True:
-        response = web.StreamResponse()
-        response.headers['content-disposition'] = f'attachment; filename={ZIP_NAME}'
-        await response.prepare(request)
-        try:
-            while True:
-                stdout = await process.stdout.read(BATCH_SIZE)
-                log('Read chunk ...')
+    try:
+        while True:
+            stdout = await process.stdout.read(BATCH_SIZE)
+            log('Read chunk ...')
 
-                await response.write(stdout)
-                if ENABLE_DELAY:
-                    await asyncio.sleep(1)
+            await response.write(stdout)
+            if ENABLE_DELAY:
+                await asyncio.sleep(1)
 
-                log('Finish read chunk ...')
+            log('Finish read chunk ...')
 
-                if process.stdout.at_eof():
-                    log('Get EOF, finish.')
-                    return response
-
-        finally:
+            if process.stdout.at_eof():
+                log('Get EOF, finish.')
+                return response
+    finally:
+        if process.returncode is None:
             log('Download was interrupted')
-            coroutine.close()
             process.kill()
 
 
