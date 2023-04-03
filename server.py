@@ -7,7 +7,6 @@ import aiofiles
 from argparser import args
 
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s :: %(name)s :: %(levelname)-8s :: %(message)s')
 logger = logging.getLogger('server')
 
 
@@ -71,6 +70,7 @@ async def handle_index_page(request: web.Request):
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s :: %(name)s :: %(levelname)-8s :: %(message)s')
     app = web.Application()
     app.add_routes([
         web.get('/', handle_index_page),
